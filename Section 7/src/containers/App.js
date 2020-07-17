@@ -2,16 +2,44 @@ import React, { Component } from 'react';
 import classes from './App.css';
 import Persons from '../components/Persons/Persons';
 import Cockpit from '../components/Cockpit/Cockpit';
+import withClass from '../hoc/withClass';
+import Auxiliar from '../hoc/Auxiliar';
+import AuthContext from '../context/auth-context';
 
 class App extends Component {
-  state = {
-    persons: [
-      {id: 'qwerty', name: 'Pedro', age: 21},
-      {id: 'asdfgh', name: 'Danilo', age: 21},
-      {id: 'zxcvbn', name: 'Daniel', age: 23},
-      {id: 'tyuiop', name: 'Romanov', age: 22}
-    ],
-    showPersons: false
+  constructor(props) {
+    super(props);
+
+    this.state = {
+      persons: [
+        {id: 'qwerty', name: 'Pedro', age: 21},
+        {id: 'asdfgh', name: 'Danilo', age: 21},
+        {id: 'zxcvbn', name: 'Daniel', age: 23},
+        {id: 'tyuiop', name: 'Romanov', age: 22}
+      ],
+      showPersons: false,
+      showCockpit: true,
+      changeCounter: 0,
+      authenticated: false
+    }
+  }
+
+  static getDerivedStateFromProps(props, state) {
+    console.log('[App.js] getDerivedStateFromProps', props);
+    return state;
+  }
+
+  componentDidMount() {
+    console.log('[App.js] componentDidMount');
+  }
+
+  shouldComponentUpdate(nextProps, nextState) {
+    console.log('[App.js] shouldComponentUpdate');
+    return true;
+  }
+
+  componentDidUpdate() {
+    console.log('[App.js] componentDidUpdate');
   }
 
   nameChangedHandler = (event, id) => {
@@ -28,7 +56,12 @@ class App extends Component {
     const persons = [...this.state.persons];
     persons[index] = person;
 
-    this.setState( {persons : persons} );
+    this.setState((prevState, props) => {
+      return {
+        persons : persons,
+        changeCounter: prevState.changeCounter + 1
+      }
+    });
   }
 
   togglePersonsHandler = () => {
@@ -44,7 +77,12 @@ class App extends Component {
     this.setState({persons: persons});
   }
 
+  loginHandler = () => {
+    this.setState({authenticated: true});
+  }
+
   render() {
+    console.log('[App.js] render');
     let persons = null;
 
     if (this.state.showPersons) {
@@ -57,16 +95,29 @@ class App extends Component {
     } 
 
     return (
-      <div className={classes.App}>
-        <Cockpit 
-          title={this.props.title} 
-          persons={this.state.persons} 
-          showPersons={this.state.showPersons}
-          clicked={this.togglePersonsHandler} />
-        {persons}
-      </div>
+      <Auxiliar>
+        <button
+          onClick={() => {
+            this.setState({ showCockpit: false });
+          }}
+        >
+          Remove Cockpit
+        </button>
+
+        <AuthContext.Provider value={{authenticated: this.state.authenticated, login: this.loginHandler}}>
+          {this.state.showCockpit ? (
+            <Cockpit
+              title={this.props.appTitle}
+              showPersons={this.state.showPersons}
+              personsLength={this.state.persons.length}
+              clicked={this.togglePersonsHandler}
+            />
+          ) : null}
+          {persons}
+        </AuthContext.Provider>
+      </Auxiliar>
     );
   }
 }
 
-export default App;
+export default withClass(App, classes.App);
